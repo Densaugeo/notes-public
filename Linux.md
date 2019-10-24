@@ -21,6 +21,23 @@ qemu-img
 virsh: list start reboot shutdown autostart destroy (which actually just forces off)
 ~~~
 
+## SSH
+
+~~~
+ssh username@hostname                                  # Basic login
+scp /some/path username@hostname:/some/path            # Copy file
+ssh-keygen -t rsa -f ~/.ssh/id_rsa_foo                 # Create key
+ssh-keygen -t rsa -f ~/.ssh/id_rsa_foo -N ''           # Create key (no passphrase)
+ssh-keygen -lvf ~/.ssh/id_rsa_foo.pub                  # View ASCII art
+ssh-copy-id -i ~/.ssh/id_rsa_foo.pub username@hostname # Copy public key to host
+ssh -i ~/.ssh/id_rsa_foo username@hostname             # Login with key
+echo 'Host hostname                                    # Configure SSH login
+    IdentityFile ~/.ssh/id_rsa_foo
+    User username
+' >> .ssh/config
+ssh-add ~/.ssh/id_rsa_foo                              # Load key into ssh-agent (check with new settings)
+~~~
+
 ## Vim
 
 ~~~
