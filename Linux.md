@@ -47,6 +47,52 @@ ssh-add ~/.ssh/id_rsa_foo                              # Load key into ssh-agent
 :se bo=all # :set belloff=all
 ~~~
 
+## Nmap
+
+TCP connection creation:
+
+~~~
+Client > SYN > Host        # TCP and SYN scans start here
+Client < SYN/ACK < Host    # If port is closed, RST is sent instead
+Client > ACK > Host        # SYN scans end here by sending RST instead
+                           # ACK scans start here
+Client < Data? < Host      # If port is closed, RST is sent instead
+Client > RST > Host        # TCP and ACK scans end here
+~~~
+
+Common commands:
+
+~~~
+# Protocol scan for ICMP, IGMP, IPv4, TCP, UDP, IPv6, IPv6-route, and IPv6-frag
+sudo nmap HOST -sO -p 1,2,4,6,17,41,43,44
+
+nmap HOST -sT -p 80                     # TCP scan port 80
+sudo nmap HOST -sS -p 80,433,8000-8080  # SYN scan ports 80, 443, and 8000-8080
+~~~
+
+| Scan Type | Arg | No Response    | ICMP Unreachable <br /> (Code = 1-3, 9-10, or 13) | RST | Other
+|-----------|-----|----------------|---|---|---
+| Protocol  | -sO | open\|filtered | Code ≠ 2: filtered <br /> Code = 2: closed || Anything else: open
+| UDP       | -sU | open\|filtered | Code ≠ 3: filtered <br /> Code = 3: closed || Anything else: open
+| TCP       | -sT | filtered       | filtered | closed | Full connection: open
+| SYN       | -sS | filtered       | filtered | closed | SYN/ACK: open
+| ACK       | -sA | filtered       | filtered | unfiltered
+| Window*   | -sW | filtered       | filtered | Window size = 0: closed <br /> Window size > 0: open
+| Null*     | -sN | open\|filtered | filtered | closed
+| FIN*      | -sF | open\|filtered | filtered | closed
+| Xmas*     | -sX | open\|filtered | filtered | closed
+| Maimon*   | -sM | open\|filtered | filtered | closed
+
+*Scan results unreliable due to poor standards compliance
+
+| Scan Type | Notes
+|-----------|---
+| TCP       | TCP connect scan. Only scan that does not require root
+| Window    | Like ACK scan, but checks the response's window size field
+| Null      | TCP scan with no flags
+| Xmas      | TCP scan with FIN, PSH, and URG flags
+| Maimon    | TCP scan with FIN and ACK flags
+
 ## Copy files in sequence (for car radio)
 
 ~~~
