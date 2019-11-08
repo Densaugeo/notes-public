@@ -38,6 +38,35 @@ echo 'Host hostname                                    # Configure SSH login
 ssh-add ~/.ssh/id_rsa_foo                              # Load key into ssh-agent (check with new settings)
 ~~~
 
+## Grep
+
+~~~
+grep foo PATH                                    # Search for foo in file at PATH
+grep foo PATH -n                                 # Show line numbers
+grep foo PATH --color=always | sed 's/^[\t]*//'  # Remove leading whitespace*
+grep foo PATH --color=always | sort | uniq       # Remove duplicates*
+grep foo PATH wc -l                              # Count lines with matches
+# *Incompatible with -n. Only compatible with -r if --no-filename is also used. Useful together
+
+grep foo PATH -r                                 # Recursive
+grep foo PATH -r --no-filename                   # Don't print filenames
+grep foo PATH -rnI                               # Exclude binary files
+grep foo PATH -rn --exclude=*.txt                # Exclude .txt files
+grep foo PATH -rn --include=*.txt                # Include only .txt files
+grep foo PATH -rl                                # List files with matches
+grep foo PATH -rl | wc -l                        # Count files with matches
+diff <(grep foo PATH -rl) <(grep bar PATH -rl)   # Check if foo and bar occur in the same files
+# Print count of foo in each immediate subfolder
+ls | xargs --replace={} sh -c "echo -n '{}: '; grep 'foo' -r '{}' | wc -l"
+
+grep 'foo\.' PATH                                # Foo plus a literal period
+grep '[Ff][Oo]\{2\}' PATH                        # Case insensitive foo
+grep -E '[Ff][Oo]{2}' PATH                       # -E allows less escaping
+grep '^foo' PATH                                 # Lines beginning with foo
+grep 'foo$' PATH                                 # Lines ending with foo. Unreliable
+grep '[^[:alnum:]]foo[^[:alnum:]]' PATH          # Foo with no alphanumeric chars before or after
+~~~
+
 ## Vim
 
 ~~~
