@@ -76,6 +76,33 @@ grep '[^[:alnum:]]foo[^[:alnum:]]' PATH          # Foo with no alphanumeric char
 :se bo=all # :set belloff=all
 ~~~
 
+## Block Devices
+
+~~~
+lsblk                              # List block devices
+cat /etc/fstab                     # Mounting info for "permanent" drives
+cat /etc/mtab                      # Mounting info for all currently mounted drives
+sudo blkid --probe DEVICE          # Detailed block device info
+sudo mount DEVICE MOUNT_POINT
+sudo umount DEVICE|MOUNT_POINT
+
+# For filesystems that don't store security info
+sudo mount DEVICE MOUNT_POINT -o uid=1000,gid=1000,dmask=002,fmask=113
+~~~
+
+/etc/fstab
+~~~
+# FS_SPEC MOUNT_POINT FS_TYPE OPTIONS DUMP FSCK
+# DUMP = 0 or 1 to disable/enable integration with the 'dump' tool I don't use
+# FSCK = 0 to not use, 1 for boot partition, 2 for others to be checked at boot
+
+# Basic ext4 drive
+UUID=UUID MOUNT_POINT ext4 defaults 0 2
+
+# To save options for vfat flash drive
+UUID=UUID MOUNT_POINT vfat defaults,noauto,uid=1000,gid=1000,dmask=002,fmask=113 0 0
+~~~
+
 ## Nmap
 
 TCP connection creation:
