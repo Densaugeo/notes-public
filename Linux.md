@@ -103,6 +103,18 @@ UUID=UUID MOUNT_POINT ext4 defaults 0 2
 UUID=UUID MOUNT_POINT vfat defaults,noauto,uid=1000,gid=1000,dmask=002,fmask=113 0 0
 ~~~
 
+## Rsync
+
+~~~
+# Do not use trailing slashes in SOURCE; this causes unpredictable behavior
+# By default, rsync uses file sizes and modification times to check for update. -c causes it to sue md5 instead
+rsync -nv SOURCE DESTINATION               # Verbose dry run - see what rsync will do
+rsync -r SOURCE DESTINATION                # Recursive - on first run, copies folder (excluding metadata)
+rsync -rc --delete SOURCE DESTINATION      # -c for checksum and --delete ensure complete update
+rsync -nvr --delete SOURCE DESTINATION     # Check for changes by file sizes and modification times
+rsync -nvrc --delete SOURCE DESTINATION    # Check for changes by checksum
+~~~
+
 ## Nmap
 
 TCP connection creation:
@@ -149,9 +161,13 @@ sudo nmap HOST -sS -p 80,433,8000-8080  # SYN scan ports 80, 443, and 8000-8080
 | Xmas      | TCP scan with FIN, PSH, and URG flags
 | Maimon    | TCP scan with FIN and ACK flags
 
-## Copy files in sequence (for car radio)
+## File Tricks
 
 ~~~
+# Set permissions on all files in file tree beginning at PATH
+find PATH -type f -exec chmod 664 {} +
+
+# Copy files in sequence (for car radio)
 cd SOURCE_DIR
 find . -type f | sed 's/^/"/g' | sed 's/$/"/g' | xargs cp -t TARGET_DIR --parents
 ~~~
