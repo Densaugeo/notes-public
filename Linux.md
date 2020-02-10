@@ -111,6 +111,8 @@ UUID=UUID MOUNT_POINT vfat defaults,noauto,uid=1000,gid=1000,dmask=002,fmask=113
 rsync -nv SOURCE DESTINATION               # Verbose dry run - see what rsync will do
 rsync -r SOURCE DESTINATION                # Recursive - on first run, copies folder (excluding metadata)
 rsync -rc --delete SOURCE DESTINATION      # -c for checksum and --delete ensure complete update
+
+# These seem to only work sometimes? Better method: diff <(tree -sDC) ...
 rsync -nvr --delete SOURCE DESTINATION     # Check for changes by file sizes and modification times
 rsync -nvrc --delete SOURCE DESTINATION    # Check for changes by checksum
 ~~~
