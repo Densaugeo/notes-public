@@ -172,6 +172,25 @@ find PATH -type f -exec chmod 664 {} +
 # Copy files in sequence (for car radio)
 cd SOURCE_DIR
 find . -type f | sed 's/^/"/g' | sed 's/$/"/g' | xargs cp -t TARGET_DIR --parents
+
+# Compare two folders by layout (-s = sizes, -D = modification times, -C = always colorize)
+diff <(tree -sDC 'FOLDER_1') <(tree -sDC 'FOLDER_2')
+
+# Compare two folders by file contents
+git diff --no-index 'FOLDER_1' 'FOLDER_2'
+~~~
+
+## Script Writing
+
+~~~
+#!/bin/bash
+# -e: Exit if a command fails
+# -u: Treat unset variables as an error in parameter expansion
+# -f: Disable pathname expansion
+# -o pipefail: If any command in a pipe fails, the pipe fails
+set -euf -o pipefail
+
+# Check scripts with shellcheck
 ~~~
 
 ## Useful folders
