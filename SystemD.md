@@ -11,3 +11,5 @@ sudo systemctl disable SERVICE # Cause SERVICE to NOT run at startup
 sudo systemctl status SERVICE@USER # Some services need to have a user specified (such as Syncthing)
 sudo journalctl -u SERVICE # Read a service's logs
 ~~~
+
+Service available for starting/enabling are stored in `/usr/lib/systemd/system` (at least on Fedora). Services that are enabled to run on startup are symlinked in `/etc/systemd/system`. The symlinks in `/usr/lib/systemd/system` do not appear to cause problems like the ones in `/usr/lib/systemd/system`.
