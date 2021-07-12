@@ -32,8 +32,9 @@ ssh-keygen -lvf ~/.ssh/id_rsa_foo.pub                  # View ASCII art
 ssh-copy-id -i ~/.ssh/id_rsa_foo.pub username@hostname # Copy public key to host
 ssh -i ~/.ssh/id_rsa_foo username@hostname             # Login with key
 echo 'Host hostname                                    # Configure SSH login
-    IdentityFile ~/.ssh/id_rsa_foo
     User username
+    IdentityFile ~/.ssh/id_rsa_foo
+    AddKeysToAgent yes
 ' >> .ssh/config
 ssh-add ~/.ssh/id_rsa_foo                              # Load key into ssh-agent (check with new settings)
 ~~~
