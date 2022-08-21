@@ -40,4 +40,7 @@ for FILE in *.ogg; do
   DELTA=$(ffmpeg -hide_banner -i "$FILE" -filter:a volumedetect -f null /dev/null 2>&1 | grep mean_volume | awk '{print (-20 - $(NF - 1))}')
   ffmpeg -hide_banner -i "$FILE" -filter:a "volume=${DELTA}dB" -v error "${FILE/.ogg/-normalized.ogg}"
 done
+
+# Clip an audio file by timestamp. START and STOP are times in the format 00:01:30, etc.
+ffmpeg -hide_banner -i FILE -vn -codec:a copy -ss START -to STOP FILE
 ~~~
