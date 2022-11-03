@@ -41,5 +41,8 @@ python -m platformio run -e pico --target upload --upload-port /dev/ttyACM0
 # The pkg command installs libraries, and apparently other things too. The author name is the Github
 # user of the package's repo, and the package name seems to come from the Arduino packaging file.
 # For my base64 library it was 'densaugeo/base64'
-python -m pkg install --library 'AUTHOR/PACKAGE'
+python -m platformio pkg install --library 'AUTHOR/PACKAGE'
+
+# Separate command for updates
+python -m platformio pkg update --library 'AUTHOR/PACKAGE'
 ~~~
