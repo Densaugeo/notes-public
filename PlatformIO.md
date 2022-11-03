@@ -18,7 +18,13 @@ cd project-folder
 python -m platformio project init --board SOME_BOARD
 ~~~
 
-I used `nanoatmega328` and `nanoatmega328old` for the boards. It created a skeleton project, and set up the `plaformio,ini` file for using these boards. I have not tried to add boards to a project later on yet.
+I used `nanoatmega328` and `nanoatmega328old` for the boards. It created a skeleton project, and set up the `plaformio,ini` file for using these boards. I added `pico` later and it worked.
+
+## RPi Pico Setup
+
+The first upload to a new Pico must be done manually. Afterwards, the Pico can be flashed by PlatformIO's usual run command.
+
+To flash a Pico manually, hold down the built-in "BOOTSEL" button while plugging it in, causing it to boot as a USB storage device instead of running a program as usual. Copy the firmware image from `.pio/build/pico/firmware.uf2` to the Pico. If successful, you will see the default info file and web link replaced with a new filesystem. The new firmware will run immediately without needing a reboot.
 
 ## Usage
 
@@ -26,14 +32,14 @@ I used `nanoatmega328` and `nanoatmega328old` for the boards. It created a skele
 python -m platformio run                               # Builds for all boards in plaformio.ini
 python -m platformio run -e SOME_BOARD                 # Builds for the specified board
 
-# Builds for the specified board and uploads. I did not have to specify a USB port
-python -m platformio run -e SOME_BOARD --target upload 
+# Builds for the specified board and uploads. I did not have to specify a USB port for Arduino Nano
+python -m platformio run -e SOME_BOARD --target upload
+
+# For RPi Pico, I did have to specify a USB port
+python -m platformio run -e pico --target upload --upload-port /dev/ttyACM0
 
 # The pkg command installs libraries, and apparently other things too. The author name is the Github
 # user of the package's repo, and the package name seems to come from the Arduino packaging file.
 # For my base64 library it was 'densaugeo/base64'
-python -m platformio pkg install --library 'AUTHOR/PACKAGE'
-
-# Separate command for updates
-python -m platformio pkg update --library 'AUTHOR/PACKAGE'
+python -m pkg install --library 'AUTHOR/PACKAGE'
 ~~~
