@@ -35,8 +35,32 @@ echo 'Host hostname                                    # Configure SSH login
     User username
     IdentityFile ~/.ssh/id_rsa_foo
     AddKeysToAgent yes
-' >> .ssh/config
+' >> ~/.ssh/config
 ssh-add ~/.ssh/id_rsa_foo                              # Load key into ssh-agent (check with new settings)
+
+waypipe ssh username@hostname SOME_APP                 # Run Wayland app on host and forward with Waypipe
+ssh -X username@hostname-x SOME_APP                    # Run X app on host and forward with SSH
+
+# Fix for Wayland/X forwarding between Fedora PCs (client side):
+echo 'Host hostname
+    # Fixes for Wayland forwarding and KDA themes on farwarded GUIs
+    SetEnv XDG_CURRENT_DESKTOP=kde QT_QPA_PLATFORM=wayland
+
+Host hostname-x
+    HostName hostname
+    # Fix for KDA themes on farwarded GUIs
+    SetEnv XDG_CURRENT_DESKTOP=kde
+' >> ~/.ssh/config
+
+# Fix for Wayland/X forwarding between Fedora PCs (host side):
+sudo bash -c 'echo "# Needed to allow Wayland forwarding
+AcceptEnv QT_QPA_PLATFORM
+
+# Needed to allow KDE themes in forwarded apps
+AcceptEnv XDG_CURRENT_DESKTOP
+" > /etc/ssh/sshd_config.d/waypipe-fix.conf'
+sudo chmod 600 /etc/ssh/sshd_config.d/waypipe-fix.conf
+
 ~~~
 
 ## Grep
