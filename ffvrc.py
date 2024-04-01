@@ -319,7 +319,8 @@ video_filters = []
 if args.resolution: video_filters += [f'scale={args.resolution}']
 if args.framerate : video_filters += [f'fps={args.framerate   }']
 if selections['subtitle']: video_filters += [
-    f'subtitles={args.input}:si={selections["subtitle"] - 1}'
+    # Subtitle must be quoted with single quotes for ffmpeg
+    f'subtitles=\'{args.input}\':si={selections["subtitle"] - 1}'
 ]
 if len(video_filters):
     ffmpeg_command += ['-vf', ','.join(video_filters)]
@@ -335,7 +336,10 @@ ffmpeg_command += [args.output]
 
 print(f'Starting {style([BOLD, ORANGE], "ffmpeg")} (progress will update once '
     f'per minute)...')
-print(style(ORANGE, " ".join(str(token) for token in ffmpeg_command)))
+print(style(ORANGE, ' '.join(
+    # Double-quote fields with paths so printed command works in most shells
+    f'"{token}"' if isinstance(token, Path) or 'subtitle' in token else token
+for token in ffmpeg_command)))
 
 try:
     ffmpeg_result = subprocess.run(ffmpeg_command)
