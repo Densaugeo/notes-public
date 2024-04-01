@@ -319,7 +319,7 @@ video_filters = []
 if args.resolution: video_filters += [f'scale={args.resolution}']
 if args.framerate : video_filters += [f'fps={args.framerate   }']
 if selections['subtitle']: video_filters += [
-    f'"subtitles={args.input}":si={selections["subtitle"]}'
+    f'subtitles={args.input}:si={selections["subtitle"] - 1}'
 ]
 if len(video_filters):
     ffmpeg_command += ['-vf', ','.join(video_filters)]
