@@ -178,7 +178,7 @@ if args.inspect:
 if not args.input.exists():
     fail(f'Input file {style([BOLD, MAGENTA], args.input)} not found')
 if args.output is None:
-    args.output = args.input.with_suffix('.mp4')
+    args.output = args.input.with_suffix('.vrc.mp4')
 elif args.output.suffix != '.mp4':
     fail(f'Output file {style([BOLD, MAGENTA], args.output)} does not end in '
         f'{style([BOLD, ORANGE], ".mp4")}\n'
@@ -314,7 +314,7 @@ ffmpeg_command += ['-vn'] if selections['video'] == 0 else [
 ]
 
 # Video filters will be empty if -vn is set. This is enforced earlier when
-# CLI arguments are checked 
+# CLI arguments are checked
 video_filters = []
 if args.resolution: video_filters += [f'scale={args.resolution}']
 if args.framerate : video_filters += [f'fps={args.framerate   }']
