@@ -80,7 +80,7 @@ class VideoStream:
         
         return cls(
             codec      = d.get('codec_long_name', '???'),
-            language   = d['tags'].get('language', '???'),
+            language   = d.get('tags', {}).get('language', '???'),
             resolution = resolution,
             frame_rate = frame_rate,
         )
@@ -106,7 +106,7 @@ class AudioStream:
     def from_dict(cls, d: dict):
         return cls(
             codec          = d.get('codec_long_name', '???'),
-            language       = d['tags'].get('language', '???'),
+            language       = d.get('tags', {}).get('language', '???'),
             channel_layout = d.get('channel_layout' , '???'),
             sample_rate    = d.get('sample_rate'    , '???'),
             bit_rate       = d.get('bit_rate'       , '???'),
@@ -131,8 +131,8 @@ class SubtitleStream:
     def from_dict(cls, d: dict):
         return cls(
             codec    = d.get('codec_long_name', '???'),
-            language = d['tags'].get('language', '???'),
-            title    = d['tags'].get('title'   , '???'),
+            language = d.get('tags', {}).get('language', '???'),
+            title    = d.get('tags', {}).get('title   ', '???'),
         )
     
     def style(self) -> str:
