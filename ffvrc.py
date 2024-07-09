@@ -150,7 +150,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('input', type=Path,
     help='Input file to convert with ffmpeg.')
 parser.add_argument('-o', '--output', type=Path,
-    help='Output file [defaults to input filename with .mp4 extension]')
+    help='Output file [defaults to input filename with .vrc.mp4 extension]')
 parser.add_argument('-r', '--resolution', type=str,
     help='Output video resolution [defaults to input video resolution]')
 parser.add_argument('-f', '--framerate', type=float,
@@ -346,6 +346,9 @@ try:
 except FileNotFoundError:
     fail(f'{style([BOLD, ORANGE], "ffmpeg")} not found\n'
         f'  Check if {style([BOLD, ORANGE], "ffmpeg")} is installed correctly')
+except KeyboardInterrupt:
+    print() # ffmpeg may leave the cursor in the middle of a line
+    fail('Canceled by user')
 if ffmpeg_result.returncode:
     fail(f'{style([BOLD, ORANGE], "ffmpeg")} returned code '
         f'{ffmpeg_result.returncode}\n'
