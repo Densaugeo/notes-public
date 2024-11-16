@@ -28,6 +28,7 @@ ssh username@hostname                                  # Basic login
 scp /some/path username@hostname:/some/path            # Copy file
 ssh-keygen -t rsa -f ~/.ssh/id_rsa_foo -C ''           # Create key
 ssh-keygen -t rsa -f ~/.ssh/id_rsa_foo -C '' -N ''     # Create key (no passphrase)
+ssh-keygen -t rsa -f ~/.ssh/id_rsa_foo -C $(hostname)  # Create key labeled with hostname
 ssh-keygen -lvf ~/.ssh/id_rsa_foo.pub                  # View ASCII art
 ssh-copy-id -i ~/.ssh/id_rsa_foo.pub username@hostname # Copy public key to host
 ssh -i ~/.ssh/id_rsa_foo username@hostname             # Login with key
