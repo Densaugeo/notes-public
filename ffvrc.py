@@ -114,16 +114,17 @@ class AudioStream:
     
     def style(self) -> str:
         return ' '.join([
-            style([BLUE, BOLD], stream.language),
-            style(ORANGE, stream.codec, width=30),
-            style(VIOLET, f'{stream.sample_rate} Hz'),
-            style(BLUE, f'{stream.bit_rate} kbps'),
-            style(GREEN, stream.channel_layout),
+            style([BLUE, BOLD], self.language),
+            style(ORANGE, self.codec, width=30),
+            style(VIOLET, f'{self.sample_rate} Hz'),
+            style(BLUE, f'{self.bit_rate} kbps'),
+            style(GREEN, self.channel_layout),
         ])
 
 @dataclasses.dataclass
 class SubtitleStream:
     codec: str
+    image: bool
     language: str
     title: str
     
@@ -131,16 +132,20 @@ class SubtitleStream:
     def from_dict(cls, d: dict):
         return cls(
             codec    = d.get('codec_long_name', '???'),
+            image    = d.get('codec_name') in SubtitleStream.IMAGE_BASED_SUBS,
             language = d.get('tags', {}).get('language', '???'),
-            title    = d.get('tags', {}).get('title   ', '???'),
+            title    = d.get('tags', {}).get('title'   , '???'),
         )
     
     def style(self) -> str:
         return ' '.join([
-            style([BLUE, BOLD], stream.language),
-            style(AQUA, stream.title, width=30),
-            style(ORANGE, stream.codec, width=30),
+            style([BLUE, BOLD], self.language),
+            style(AQUA, self.title, width=30),
+            style(ORANGE, self.codec, width=30),
         ])
+
+SubtitleStream.IMAGE_BASED_SUBS = ['dvb_subtitle', 'dvd_subtitle',
+    'hdmv_pgs_subtitle', 'xubs']
 
 ########################
 # CLI Argument Parsing #
@@ -161,6 +166,8 @@ parser.add_argument('-as', '--audio-stream', type=int,
     help='Select audio stream (0 to skip audio)')
 parser.add_argument('-ss', '--subtitle-stream', type=int,
     help='Select subtitle stream (0 to skip subtitles)')
+parser.add_argument('-sf', '--subtitle-file', type=Path,
+    help='Select subtitle file')
 parser.add_argument('--inspect', action='store_true', default=False,
     help='Inspect video file without converting [default false]')
 
@@ -168,7 +175,7 @@ args = parser.parse_args()
 if args.inspect:
     for argument, value in vars(args).items():
         # These are the only two arguments allowed with --inpsect
-        if argument in ['inspect', 'input']:
+        if argument in ['inspect', 'input', 'subtitle_file']:
             continue
         
         if value is not None:
@@ -177,6 +184,13 @@ if args.inspect:
                 f'{style([BOLD, ORANGE], "--inspect")}')
 if not args.input.exists():
     fail(f'Input file {style([BOLD, MAGENTA], args.input)} not found')
+if args.subtitle_file:
+    if not args.subtitle_file.exists():
+        fail(f'Subtitle file {style([BOLD, MAGENTA], args.subtitle_file)} not '
+            'found')
+    if args.subtitle_file.suffix not in ['.srt', '.ass']:
+        print(f'{style([BOLD, MAGENTA], "Warning:")} Subtitle files other than '
+            '.srt and .ass may not be handled correctly\n')
 if args.output is None:
     args.output = args.input.with_suffix('.vrc.mp4')
 elif args.output.suffix != '.mp4':
@@ -190,28 +204,31 @@ elif args.output.suffix != '.mp4':
 # ffprobe #
 ###########
 
-try:
-    ffprobe_result = subprocess.run([
-        'ffprobe',
-        '-v', 'quiet',
-        '-print_format', 'json',
-        '-show_streams',
-        args.input,
-    ], capture_output=True, text=True)
-except FileNotFoundError:
-    fail(f'{style([BOLD, ORANGE], "ffprobe")} not found\n'
-        f'  Check if {style([BOLD, ORANGE], "ffmpeg")} is installed correctly')
-if ffprobe_result.returncode:
-    fail(f'{style([BOLD, ORANGE], "ffprobe")} returned code '
-        f'{ffprobe_result.returncode}\n'
-        f'  Check if input file {style([BOLD, MAGENTA], args.input)} is '
-        f'malformed')
-try:
-    streams_json = json.loads(ffprobe_result.stdout)['streams']
-except Exception as e:
-    fail(f'Unable to parse JSON from {style([BOLD, ORANGE], "ffprobe")}\n'
-        f'  {e.__repr__()}\n'
-        f'  Check if {style([BOLD, ORANGE], "ffmpeg")} is installed correctly')
+def ffprobe(path: Path):
+    try:
+        result = subprocess.run([
+            'ffprobe',
+            '-v', 'quiet',
+            '-print_format', 'json',
+            '-show_streams',
+            path,
+        ], capture_output=True, text=True)
+    except FileNotFoundError:
+        fail(f'{style([BOLD, ORANGE], "ffprobe")} not found\n'
+            f'  Check if {style([BOLD, ORANGE], "ffmpeg")} is installed '
+            f'correctly')
+    if result.returncode:
+        fail(f'{style([BOLD, ORANGE], "ffprobe")} returned code '
+            f'{result.returncode}\n'
+            f'  Check if input file {style([BOLD, MAGENTA], path)} is '
+            f'malformed')
+    try:
+        return json.loads(result.stdout)['streams']
+    except Exception as e:
+        fail(f'Unable to parse JSON from {style([BOLD, ORANGE], "ffprobe")}\n'
+            f'  {e.__repr__()}\n'
+            f'  Check if {style([BOLD, ORANGE], "ffmpeg")} is installed '
+            f'correctly')
 
 streams = {
     'video': [],
@@ -219,16 +236,56 @@ streams = {
     'subtitle': [],
 }
 
-for s in streams_json:
+for s in ffprobe(args.input):
+    # 10-bit H.264 videos have caused me compatibility headaches, especially
+    # with Fedora's crippled version of ffmpeg. If an H.264 video appears to be
+    # 10-bit, check if a proper H.264 codec is available and not just
+    # libopenh264
+    if s['codec_type'] == 'video' and s['codec_name'] == 'h264':
+        # Yes ffmpeg reports bits_per_raw_sample as a string. Idk why. Also it
+        # seem to be present only rarely
+        if '10' in s.get('codec_long_name', '') \
+        or s.get('bits_per_raw_sample') == '10':
+            result = subprocess.run([
+                'ffprobe',
+                '-v', 'quiet',
+                '-decoders',
+            ], capture_output=True, text=True)
+            
+            if result.returncode:
+                fail(f'{style([BOLD, ORANGE], "ffprobe")} returned code '
+                    f'{result.returncode} while checking H.264 support\n'
+                    f'  Something is very wrong!')
+            
+            h264_decoders = re.findall(
+                'V[A-Z.]{4}D ([a-zA-Z0-9_]*h264[a-zA-Z0-9_]*)', result.stdout)
+            
+            if 'h264' not in h264_decoders:
+                print(f'{style([BOLD, MAGENTA], "Warning:")} This appears to '
+                    f'be a 10-bit H.264 video, and the standard H.264 '
+                    f'decoder does not appear to be present. Other H.264 '
+                    f'decoders frequently crash on 10-bit video. If this is a '
+                    f'FOSS-only build of ffmpeg, consider getting a full '
+                    f'build.\n'
+                    f'  {style([BOLD, ORANGE], "ffmpeg")} found decoders: '
+                    f'{style([BOLD, ORANGE], ', '.join(h264_decoders))}\n'
+                    f'  Attempting to convert the video anyway...\n')
+    
     match s['codec_type']:
         case 'video'   : streams['video'   ].append(VideoStream   .from_dict(s))
         case 'audio'   : streams['audio'   ].append(AudioStream   .from_dict(s))
         case 'subtitle': streams['subtitle'].append(SubtitleStream.from_dict(s))
 
+# If a subtitle file is supplied, ignore any subtitle streams in the video file
+if args.subtitle_file:
+    streams['subtitle'] = [SubtitleStream.from_dict(s)
+        for s in ffprobe(args.subtitle_file) if s['codec_type'] == 'subtitle']
+
 selections = {
-    'video': [],
-    'audio': [],
-    'subtitle': [],
+    'video': None,
+    'audio': None,
+    'subtitle': None,
+    'image_subtitles': False,
 }
 
 for codec_type in streams:
@@ -278,10 +335,15 @@ for codec_type in streams:
             f'{style([BOLD, MAGENTA], selection)}')
     
     selections[codec_type] = selection
+    if codec_type == 'subtitle' and selection \
+    and streams['subtitle'][selection - 1].image:
+        selections['image_subtitles'] = True
     
     # When no video stream is selected, several CLI options are prohibited
     if codec_type == 'video' and selection == 0:
-        for argument in ['resolution', 'framerate', 'subtitle_stream']:
+        for argument in [
+            'resolution', 'framerate', 'subtitle_stream', 'subtitle_file',
+        ]:
             if getattr(args, argument):
                 fail(f'Cannot use argument '
                     f'{style([BOLD, MAGENTA], argument)} because no video '
@@ -306,24 +368,58 @@ ffmpeg_command = [
     '-i', args.input,
 ]
 
+# Video filters will be empty if -vn is set. This is enforced earlier when
+# CLI arguments are checked
+video_filters = []
+
+# Since video formats are the most cursed formats, subtitle streams aren't
+# always text: Sometimes they're images! ffmpeg can handle that, but regular
+# video filters won't do - it needs -filter_complex, which is just as
+# complicated to figure out as the name suggests. It must be applied before
+# mapping the video stream, and the -map argument must use -filter_complex's
+# output, else the subtitles won't be baked into the final video
+#
+# Note: If subtitles are used they must be the first filter, otherwise they will
+# end up in the wrong spot on the video
+#
+# Note: Subtitle files with multiple subtitle streams aren't handled, because I
+# haven't seen any in the wild and don't know if they exist
+#
+# Note: Subtitle files that use images aren't handled either, because I haven't
+# seen any in the wild and don't know if they exist
+if selections['subtitle']:
+    if selections['image_subtitles']:
+        video_filters += ['overlay']
+    elif args.subtitle_file:
+        filter_type = 'ass' if args.subtitle_file.suffix == '.ass' \
+            else 'subtitles'
+        
+        # Subtitle must be quoted with single quotes for ffmpeg
+        video_filters += [f'{filter_type}=\'{args.subtitle_file}\'']
+    else:
+        # Subtitle must be quoted with single quotes for ffmpeg
+        video_filters += [f'subtitles=\'{args.input}\':'
+            f'si={selections["subtitle"] - 1}']
+
+# These filters can be applied using -vf, but -vf and -filter_complex do not
+# work together so everything has to use -filter_complex
+if args.resolution: video_filters += [f'scale={args.resolution}']
+if args.framerate : video_filters += [f'fps={  args.framerate }']
+
+if len(video_filters):
+    video_source = f'[0:v:{selections["video"] - 1}]'
+    if selections['image_subtitles']:
+        video_source += f'[0:s:{selections["subtitle"] - 1}]'
+    
+    ffmpeg_command += ['-filter_complex',
+         video_source + ','.join(video_filters) + '[vout]']
+
 ffmpeg_command += ['-vn'] if selections['video'] == 0 else [
-    '-map', f'0:v:{selections["video"] - 1}',
+    '-map', '[vout]' if video_filters else f'0:v:{selections["video"] - 1}',
     '-c:v', 'h264',
     '-preset', 'veryslow',
     '-movflags', '+faststart',
 ]
-
-# Video filters will be empty if -vn is set. This is enforced earlier when
-# CLI arguments are checked
-video_filters = []
-if args.resolution: video_filters += [f'scale={args.resolution}']
-if args.framerate : video_filters += [f'fps={args.framerate   }']
-if selections['subtitle']: video_filters += [
-    # Subtitle must be quoted with single quotes for ffmpeg
-    f'subtitles=\'{args.input}\':si={selections["subtitle"] - 1}'
-]
-if len(video_filters):
-    ffmpeg_command += ['-vf', ','.join(video_filters)]
 
 ffmpeg_command += ['-an'] if selections['audio'] == 0 else [
     '-map', f'0:a:{selections["audio"] - 1}',
@@ -337,8 +433,10 @@ ffmpeg_command += [args.output]
 print(f'Starting {style([BOLD, ORANGE], "ffmpeg")} (progress will update once '
     f'per minute)...')
 print(style(ORANGE, ' '.join(
-    # Double-quote fields with paths so printed command works in most shells
-    f'"{token}"' if isinstance(token, Path) or 'subtitle' in token else token
+    # Double-quote fields with paths so printed command works in most shells.
+    # The value passed to -filter_complex always ends in "[vout]". -map may also
+    # have a value of "[vout]", in which case it should probably be quoted too
+    f'"{token}"' if isinstance(token, Path) or token[-6:] == '[vout]' else token
 for token in ffmpeg_command)))
 
 try:
