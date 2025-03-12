@@ -419,6 +419,9 @@ ffmpeg_command += ['-vn'] if selections['video'] == 0 else [
     '-c:v', 'h264',
     '-preset', 'veryslow',
     '-movflags', '+faststart',
+    # Other pixel formats can crash VRC. I discovered this on a video with a
+    # pixel format of "yuv444p10le"
+    '-pix_fmt', 'yuv420p',
 ]
 
 ffmpeg_command += ['-an'] if selections['audio'] == 0 else [
