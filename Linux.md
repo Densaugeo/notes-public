@@ -109,6 +109,7 @@ lsblk                              # List block devices
 cat /etc/fstab                     # Mounting info for "permanent" drives
 cat /etc/mtab                      # Mounting info for all currently mounted drives
 sudo blkid --probe DEVICE          # Detailed block device info
+sudo badblocks -ws DEVICE          # Memory test
 sudo mount DEVICE MOUNT_POINT
 sudo umount DEVICE|MOUNT_POINT
 
