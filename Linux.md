@@ -2,7 +2,7 @@
 
 ## Useful commands
 
-~~~
+```
 lsmod
 modprobe
 modinfo
@@ -19,11 +19,11 @@ reboot
 virsh
 qemu-img
 virsh: list start reboot shutdown autostart destroy (which actually just forces off)
-~~~
+```
 
 ## SSH
 
-~~~
+```bash
 ssh username@hostname                          # Basic login
 scp /some/path username@hostname:/some/path    # Copy file
 ssh-keygen -f ~/.ssh/id -C ''                  # Create key
@@ -66,12 +66,11 @@ AcceptEnv QT_QPA_PLATFORM
 AcceptEnv XDG_CURRENT_DESKTOP
 " > /etc/ssh/sshd_config.d/waypipe-fix.conf'
 sudo chmod 600 /etc/ssh/sshd_config.d/waypipe-fix.conf
-
-~~~
+```
 
 ## Tmux
 
-~~~
+```bash
 tmux                                  # Open a new session
 tmux new-session -d -s SESSION        # Open a new session named SESSION in the
                                       # background
@@ -87,7 +86,7 @@ tmux kill-window -t SESSION:WINDOW    # Kill WINDOW in SESSION. Warning: May
 tmux kill-window -t SESSION:^         # Kill first window in SESSION. Useful for
                                       # removing the default window 0 when
                                       # creating a session by script
-~~~
+```
 
 Useful commands within tmux, accessible by pressing Ctrl+B:
 - `w`: Show list of windows and sessions.
@@ -95,7 +94,7 @@ Useful commands within tmux, accessible by pressing Ctrl+B:
 
 ## Grep
 
-~~~
+```bash
 grep foo PATH                                    # Search for foo in file at
                                                  # PATH
 grep foo PATH -n                                 # Show line numbers
@@ -126,20 +125,20 @@ grep 'foo$' PATH                                 # Lines ending with foo.
                                                  # Unreliable
 grep '[^[:alnum:]]foo[^[:alnum:]]' PATH          # Foo with no alphanumeric
                                                  # chars before or after
-~~~
+```
 
 ## Vim
 
-~~~
+```
 :se ww+=<> # :set whichwrap=<> Allows navigation with arrows to wrap over newlines
 :se bs=2 # :set basckspace=indent,eol,start Allows normal backspacing in insert mode
 :se mouse=a # Enable mouse
 :se bo=all # :set belloff=all
-~~~
+```
 
 ## Block Devices
 
-~~~
+```bash
 lsblk                              # List block devices
 cat /etc/fstab                     # Mounting info for "permanent" drives
 cat /etc/mtab                      # Mounting info for all currently mounted
@@ -151,10 +150,10 @@ sudo umount DEVICE|MOUNT_POINT
 
 # For filesystems that don't store security info
 sudo mount DEVICE MOUNT_POINT -o uid=1000,gid=1000,dmask=002,fmask=113
-~~~
+```
 
 /etc/fstab
-~~~
+```bash
 # FS_SPEC MOUNT_POINT FS_TYPE OPTIONS DUMP FSCK
 # DUMP = 0 or 1 to disable/enable integration with the 'dump' tool I don't use
 # FSCK = 0 to not use, 1 for boot partition, 2 for others to be checked at boot
@@ -164,11 +163,11 @@ UUID=UUID MOUNT_POINT ext4 defaults 0 2
 
 # To save options for vfat flash drive
 UUID=UUID MOUNT_POINT vfat defaults,noauto,uid=1000,gid=1000,dmask=002,fmask=113 0 0
-~~~
+```
 
 ## Rsync
 
-~~~
+```bash
 # Do not use trailing slashes in SOURCE; this causes unpredictable behavior
 # By default, rsync uses file sizes and modification times to check for update.
 # -c causes it to sue md5 instead
@@ -183,30 +182,30 @@ rsync -rc --delete SOURCE DESTINATION      # -c for checksum and --delete ensure
 rsync -nvr --delete SOURCE DESTINATION     # Check for changes by file sizes and
                                            # modification times
 rsync -nvrc --delete SOURCE DESTINATION    # Check for changes by checksum
-~~~
+```
 
 ## Nmap
 
 TCP connection creation:
 
-~~~
+```
 Client > SYN > Host        # TCP and SYN scans start here
 Client < SYN/ACK < Host    # If port is closed, RST is sent instead
 Client > ACK > Host        # SYN scans end here by sending RST instead
                            # ACK scans start here
 Client < Data? < Host      # If port is closed, RST is sent instead
 Client > RST > Host        # TCP and ACK scans end here
-~~~
+```
 
 Common commands:
 
-~~~
+```bash
 # Protocol scan for ICMP, IGMP, IPv4, TCP, UDP, IPv6, IPv6-route, and IPv6-frag
 sudo nmap HOST -sO -p 1,2,4,6,17,41,43,44
 
 nmap HOST -sT -p 80                     # TCP scan port 80
 sudo nmap HOST -sS -p 80,433,8000-8080  # SYN scan ports 80, 443, and 8000-8080
-~~~
+```
 
 | Scan Type | Arg | No Response    | ICMP Unreachable <br /> (Code = 1-3, 9-10, or 13) | RST | Other
 |-----------|-----|----------------|---|---|---
@@ -233,7 +232,7 @@ sudo nmap HOST -sS -p 80,433,8000-8080  # SYN scan ports 80, 443, and 8000-8080
 
 ## File Tricks
 
-~~~
+```bash
 # Set permissions on all files in file tree beginning at PATH
 find PATH -type f -exec chmod 664 {} +
 
@@ -246,11 +245,11 @@ diff <(tree -sDC 'FOLDER_1') <(tree -sDC 'FOLDER_2')
 
 # Compare two folders by file contents
 git diff --no-index 'FOLDER_1' 'FOLDER_2'
-~~~
+```
 
 ## Script Writing
 
-~~~
+```bash
 #!/bin/bash
 # -e: Exit if a command fails
 # -u: Treat unset variables as an error in parameter expansion
@@ -259,12 +258,12 @@ git diff --no-index 'FOLDER_1' 'FOLDER_2'
 set -euf -o pipefail
 
 # Check scripts with shellcheck
-~~~
+```
 
 ## Useful folders
 
-~~~
+```
 /boot
 /lib/modules
 /proc
-~~~
+```
