@@ -24,23 +24,28 @@ virsh: list start reboot shutdown autostart destroy (which actually just forces 
 ## SSH
 
 ~~~
-ssh username@hostname                                  # Basic login
-scp /some/path username@hostname:/some/path            # Copy file
-ssh-keygen -t rsa -f ~/.ssh/id_rsa_foo -C ''           # Create key
-ssh-keygen -t rsa -f ~/.ssh/id_rsa_foo -C '' -N ''     # Create key (no passphrase)
-ssh-keygen -t rsa -f ~/.ssh/id_rsa_foo -C $(hostname)  # Create key labeled with hostname
-ssh-keygen -lvf ~/.ssh/id_rsa_foo.pub                  # View ASCII art
-ssh-copy-id -i ~/.ssh/id_rsa_foo.pub username@hostname # Copy public key to host
-ssh -i ~/.ssh/id_rsa_foo username@hostname             # Login with key
-echo 'Host hostname                                    # Configure SSH login
+ssh username@hostname                          # Basic login
+scp /some/path username@hostname:/some/path    # Copy file
+ssh-keygen -f ~/.ssh/id -C ''                  # Create key
+ssh-keygen -f ~/.ssh/id -C '' -N ''            # Create key (no passphrase)
+ssh-keygen -f ~/.ssh/id -C $(hostname)         # Create key labeled by hostname
+ssh-keygen -f ~/.ssh/id -C '' -t ed25519       # Create ed25519 key (not
+                                               # recommended, use defaults
+                                               # unless necessary)
+ssh-keygen -lvf ~/.ssh/id.pub                  # View ASCII art
+ssh-copy-id -i ~/.ssh/id.pub username@hostname # Copy public key to host
+ssh -i ~/.ssh/id username@hostname             # Login with key
+echo 'Host hostname                            # Configure SSH login
     User username
-    IdentityFile ~/.ssh/id_rsa_foo
+    IdentityFile ~/.ssh/id
     AddKeysToAgent yes
 ' >> ~/.ssh/config
-ssh-add ~/.ssh/id_rsa_foo                              # Load key into ssh-agent (check with new settings)
+ssh-add ~/.ssh/id                              # Load key into ssh-agent
 
-waypipe ssh username@hostname SOME_APP                 # Run Wayland app on host and forward with Waypipe
-ssh -X username@hostname-x SOME_APP                    # Run X app on host and forward with SSH
+waypipe ssh username@hostname SOME_APP         # Run Wayland app on host and
+                                               # forward with Waypipe
+ssh -X username@hostname-x SOME_APP            # Run X app on host and forward
+                                               # with SSH
 
 # Fix for Wayland/X forwarding between Fedora PCs (client side):
 echo 'Host hostname
@@ -64,24 +69,52 @@ sudo chmod 600 /etc/ssh/sshd_config.d/waypipe-fix.conf
 
 ~~~
 
+## Tmux
+
+~~~
+tmux                                  # Open a new session
+tmux new-session -d -s SESSION        # Open a new session named SESSION in the
+                                      # background
+tmux new-window -t SESSION -n WINDOW  # Open a new window named WINDOW in
+                                      # SESSION
+tmux new-window -d -t SESSION COMMAND # Open a new window in the background in
+                                      # SESSION running COMMAND
+tmux attach -t SESSION                # Attach to existing SESSION
+tmux attach -t SESSION:WINDOW         # Attach to existing WINDOW in SESSION
+tmux kill-window -t SESSION:WINDOW    # Kill WINDOW in SESSION. Warning: May
+                                      # leave running processes in the
+                                      # background
+tmux kill-window -t SESSION:^         # Kill first window in SESSION. Useful for
+                                      # removing the default window 0 when
+                                      # creating a session by script
+~~~
+
+Useful commands within tmux, accessible by pressing Ctrl+B:
+- `w`: Show list of windows and sessions.
+- `&`: Close current window.
+
 ## Grep
 
 ~~~
-grep foo PATH                                    # Search for foo in file at PATH
+grep foo PATH                                    # Search for foo in file at
+                                                 # PATH
 grep foo PATH -n                                 # Show line numbers
 grep foo PATH --color=always | sed 's/^[\t]*//'  # Remove leading whitespace*
 grep foo PATH --color=always | sort | uniq       # Remove duplicates*
 grep foo PATH wc -l                              # Count lines with matches
-# *Incompatible with -n. Only compatible with -r if --no-filename is also used. Useful together
+# *Incompatible with -n. Only compatible with -r if --no-filename is also used.
+# Useful together
 
 grep foo PATH -r                                 # Recursive
 grep foo PATH -r --no-filename                   # Don't print filenames
 grep foo PATH -rnI                               # Exclude binary files
+grep foo PATH -rni                               # Case-insensitive
 grep foo PATH -rn --exclude=*.txt                # Exclude .txt files
 grep foo PATH -rn --include=*.txt                # Include only .txt files
 grep foo PATH -rl                                # List files with matches
 grep foo PATH -rl | wc -l                        # Count files with matches
-diff <(grep foo PATH -rl) <(grep bar PATH -rl)   # Check if foo and bar occur in the same files
+diff <(grep foo PATH -rl) <(grep bar PATH -rl)   # Check if foo and bar occur in
+                                                 # the same files
 # Print count of foo in each immediate subfolder
 ls | xargs --replace={} sh -c "echo -n '{}: '; grep 'foo' -r '{}' | wc -l"
 
@@ -89,8 +122,10 @@ grep 'foo\.' PATH                                # Foo plus a literal period
 grep '[Ff][Oo]\{2\}' PATH                        # Case insensitive foo
 grep -E '[Ff][Oo]{2}' PATH                       # -E allows less escaping
 grep '^foo' PATH                                 # Lines beginning with foo
-grep 'foo$' PATH                                 # Lines ending with foo. Unreliable
-grep '[^[:alnum:]]foo[^[:alnum:]]' PATH          # Foo with no alphanumeric chars before or after
+grep 'foo$' PATH                                 # Lines ending with foo.
+                                                 # Unreliable
+grep '[^[:alnum:]]foo[^[:alnum:]]' PATH          # Foo with no alphanumeric
+                                                 # chars before or after
 ~~~
 
 ## Vim
@@ -107,7 +142,8 @@ grep '[^[:alnum:]]foo[^[:alnum:]]' PATH          # Foo with no alphanumeric char
 ~~~
 lsblk                              # List block devices
 cat /etc/fstab                     # Mounting info for "permanent" drives
-cat /etc/mtab                      # Mounting info for all currently mounted drives
+cat /etc/mtab                      # Mounting info for all currently mounted
+                                   # drives
 sudo blkid --probe DEVICE          # Detailed block device info
 sudo badblocks -ws DEVICE          # Memory test
 sudo mount DEVICE MOUNT_POINT
@@ -134,13 +170,18 @@ UUID=UUID MOUNT_POINT vfat defaults,noauto,uid=1000,gid=1000,dmask=002,fmask=113
 
 ~~~
 # Do not use trailing slashes in SOURCE; this causes unpredictable behavior
-# By default, rsync uses file sizes and modification times to check for update. -c causes it to sue md5 instead
-rsync -nv SOURCE DESTINATION               # Verbose dry run - see what rsync will do
-rsync -r SOURCE DESTINATION                # Recursive - on first run, copies folder (excluding metadata)
-rsync -rc --delete SOURCE DESTINATION      # -c for checksum and --delete ensure complete update
+# By default, rsync uses file sizes and modification times to check for update.
+# -c causes it to sue md5 instead
+rsync -nv SOURCE DESTINATION               # Verbose dry run - see what rsync
+                                           # will do
+rsync -r SOURCE DESTINATION                # Recursive - on first run, copies
+                                           # folder (excluding metadata)
+rsync -rc --delete SOURCE DESTINATION      # -c for checksum and --delete ensure
+                                           # complete update
 
 # These seem to only work sometimes? Better method: diff <(tree -sDC) ...
-rsync -nvr --delete SOURCE DESTINATION     # Check for changes by file sizes and modification times
+rsync -nvr --delete SOURCE DESTINATION     # Check for changes by file sizes and
+                                           # modification times
 rsync -nvrc --delete SOURCE DESTINATION    # Check for changes by checksum
 ~~~
 

@@ -54,3 +54,30 @@ nfsnobody:!!:16737::::::
 ~~~
 
 The entire second field can be replaced with an empty string for no password, or '!', '!!', '*', or 'LK' to indicated a locked account
+
+## /etc/sudoers
+
+Stores sudo rules. There's a lot of default stuff in here that I've never needed to change. I've only needed to change the few lines known as "Runas Specs" (the first 3 examples are form the default sudoers file):
+
+~~~
+[User name] ALL=([Target user]) [OPTIONS]: [Commands]
+
+## Allow root to run any commands anywhere
+root    ALL=(ALL)       ALL
+
+## Allows people in group wheel to run all commands
+%wheel  ALL=(ALL)       ALL
+
+## Same thing without a password
+# %wheel        ALL=(ALL)       NOPASSWD: ALL
+
+## Remove password requirement for running a specific command
+den-antares ALL = (caddy) NOPASSWD:/usr/bin/caddy run
+~~~
+
+- The first `ALL` before the = is a host designation. I've never needed to restrict sudo by host or seen anything but `ALL` used here.
+- `[Target user]`: Designates which target users the user running sudo may switch to.
+- `[OPTIONS]`: So far the only one I have used is `NOPASSWD`.
+- `[Commands]`: Comma-separated list of commands.
+
+For modularity, modifications are usually put in files in `/etc/sudoers.d/`, which is imported by the default sudoers file.
